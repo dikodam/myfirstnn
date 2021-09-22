@@ -1,13 +1,16 @@
 package de.dikodam.utils
 
-operator fun ((Double) -> Double).invoke(vector: Array<Double>): DoubleArray {
-    return DoubleArray(vector.size) { i -> this(vector[i]) }
-}
 
+/**
+ * vectorization of (Double) -> Double function
+ */
 operator fun ((Double) -> Double).invoke(vector: DoubleArray): DoubleArray {
     return DoubleArray(vector.size) { i -> this(vector[i]) }
 }
 
+/**
+ * dot product
+ */
 operator fun DoubleArray.times(other: DoubleArray): Double {
     if (this.size != other.size) {
         error("cannot compute dot product of vectors of unequal size")
@@ -16,9 +19,15 @@ operator fun DoubleArray.times(other: DoubleArray): Double {
         .fold(0.0) { sum, (left, right) -> sum + left * right }
 }
 
-operator fun DoubleArray.times(other: Double): Array<Double> =
-    Array(this.size) { i -> this[i] * other }
+/**
+ * scalar product
+ */
+operator fun DoubleArray.times(other: Double): DoubleArray =
+    DoubleArray(this.size) { i -> this[i] * other }
 
+/**
+ * vector addition
+ */
 operator fun DoubleArray.plus(other: DoubleArray): DoubleArray {
     if (this.size != other.size) {
         error("cannot compute sum of vectors of unequal size")

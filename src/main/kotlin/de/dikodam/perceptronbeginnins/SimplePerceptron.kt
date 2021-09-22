@@ -1,7 +1,7 @@
 package de.dikodam.perceptronbeginnins
 
 import de.dikodam.utils.ActivationFunction
-import de.dikodam.utils.BinaryActivation
+import de.dikodam.utils.ActivationFunction.Binary
 import de.dikodam.utils.times
 import java.time.Duration
 import java.time.Instant
@@ -16,7 +16,7 @@ fun main() {
     println("i've read $first and $second")
      */
     val start = Instant.now()
-    val perceptron = Neuron(weights = doubleArrayOf(-2.0, -2.0), bias = 3, activationFunction = BinaryActivation())
+    val perceptron = Neuron(weights = doubleArrayOf(-2.0, -2.0), bias = 3, activationFunction = Binary)
 
     listOf(0 to 0, 0 to 1, 1 to 0, 1 to 1)
         .map { arrayOf(it.first.toDouble(), it.second.toDouble()) }

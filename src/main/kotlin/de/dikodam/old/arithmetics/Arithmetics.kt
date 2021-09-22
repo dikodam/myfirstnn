@@ -1,6 +1,8 @@
 package de.dikodam.old.arithmetics
 
 class Vector(private val values: DoubleArray) {
+    val size = values.size
+
     operator fun Int.times(vector: Vector): Vector {
         return Vector(vector.values.map { value -> this * value }.toDoubleArray())
     }
