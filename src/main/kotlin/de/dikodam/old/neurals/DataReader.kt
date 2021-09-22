@@ -64,6 +64,16 @@ data class ImageData(val width: Int, val height: Int, val pixels: List<Int>)
 
 data class LabeledImage(val image: ImageData, val label: Int)
 
+
+class LabeledImageVect(val image: ImageData, val label: DoubleArray) {
+    operator fun component1() = image
+    operator fun component2() = label
+}
+
+fun LabeledImage.toVecotrized() =
+    LabeledImageVect(image, DoubleArray(10) { i -> if (i == this.label) 1.0 else 0.0 })
+
+
 private fun processLabels(buffer: ByteBuffer): List<Int> {
     println("processing labels...")
     // skip first line (4 Bytes), it only contains a magic number
