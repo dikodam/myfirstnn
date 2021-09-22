@@ -1,4 +1,4 @@
-package de.dikodam.arithmetics
+package de.dikodam.old.arithmetics
 
 import kotlin.math.pow
 

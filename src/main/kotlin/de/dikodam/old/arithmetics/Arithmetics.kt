@@ -1,4 +1,4 @@
-package de.dikodam.arithmetics
+package de.dikodam.old.arithmetics
 
 class Vector(private val values: DoubleArray) {
     operator fun Int.times(vector: Vector): Vector {

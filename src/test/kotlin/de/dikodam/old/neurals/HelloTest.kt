@@ -1,7 +1,4 @@
-package de.dikodam.neurals
-
-import org.junit.Test
-import kotlin.test.assertEquals
+package de.dikodam.old.neurals
 
 class HelloTest {
 

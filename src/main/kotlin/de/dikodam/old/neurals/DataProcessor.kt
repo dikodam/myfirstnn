@@ -1,4 +1,4 @@
-package de.dikodam.neurals
+package de.dikodam.old.neurals
 
 import java.io.File
 import java.io.FileInputStream
