@@ -9,6 +9,29 @@ operator fun ((Double) -> Double).invoke(vector: DoubleArray): DoubleArray {
 }
 
 /**
+ * vector addition
+ */
+operator fun DoubleArray.plus(other: DoubleArray): DoubleArray {
+    if (this.size != other.size) {
+        error("cannot compute sum of vectors of unequal size")
+    }
+    return DoubleArray(this.size) { i -> this[i] + other[i] }
+}
+
+/**
+ * vector subtraction
+ */
+operator fun DoubleArray.minus(other: DoubleArray): DoubleArray {
+    if (this.size != other.size) {
+        error("cannot compute sum of vectors of unequal size")
+    }
+    return DoubleArray(this.size) { i -> this[i] - other[i] }
+}
+
+operator fun Double.times(vector: DoubleArray): DoubleArray =
+    DoubleArray(vector.size) { i -> this * vector[i] }
+
+/**
  * dot product
  */
 operator fun DoubleArray.times(other: DoubleArray): Double {
@@ -49,30 +72,12 @@ fun DoubleArray.transpose(): DoubleMatrix {
     return DoubleMatrix(1, this.size) { _, col -> this[col] }
 }
 
-/**
- * scalar product
- */
-operator fun Double.times(vector: DoubleArray): DoubleArray =
-    DoubleArray(vector.size) { i -> vector[i] * this }
-
-/**
- * vector addition
- */
-operator fun DoubleArray.plus(other: DoubleArray): DoubleArray {
-    if (this.size != other.size) {
-        error("cannot compute sum of vectors of unequal size")
-    }
-    return DoubleArray(this.size) { i -> this[i] + other[i] }
-}
-
-/**
- * vector subtraction
- */
-operator fun DoubleArray.minus(other: DoubleArray): DoubleArray {
-    if (this.size != other.size) {
-        error("cannot compute sum of vectors of unequal size")
-    }
-    return DoubleArray(this.size) { i -> this[i] - other[i] }
+fun DoubleArray.getHighestActivationIndex(): Int {
+    val (index, activation) = (this.asSequence()
+        .mapIndexed { i, res -> i to res }
+        .maxByOrNull { (index, res) -> res }
+        ?: error("array is empty"))
+    return index
 }
 
 fun DoubleArray.copy(initializer: (Int) -> Double): DoubleArray {

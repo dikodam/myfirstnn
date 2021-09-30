@@ -4,6 +4,7 @@ import java.time.Instant
 import kotlin.math.E
 import kotlin.math.pow
 import kotlin.random.Random
+import kotlin.random.asJavaRandom
 
 // v -> v' = v - n * VC
 // where v is the current position (weights and biases? v = x * w + b ? )
@@ -16,10 +17,10 @@ val rng by lazy {
 }
 
 class RNG {
-    private val random = Random(Instant.now().toEpochMilli())
+    private val random = Random(Instant.now().toEpochMilli()).asJavaRandom()
 
-    fun nextDouble(): Double {
-        return random.nextDouble(-1.0, 1.0)
+    fun nextDouble(m: Double = 0.0, s: Double = 1.0): Double {
+        return m + s * random.nextGaussian()
     }
 
 }

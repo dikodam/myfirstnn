@@ -6,9 +6,15 @@ import de.dikodam.old.neurals.LabeledImageVect
 import de.dikodam.old.neurals.toVecotrized
 import de.dikodam.utils.*
 import java.time.LocalDateTime
+import kotlin.math.sqrt
 
 fun main() {
-    val net = Network("first one", 784, 30, 10)
+    val net = Network(
+        "first one", ActivationFunction.Sigmoid,
+        784,
+        100,
+        10
+    )
     println("net layer configuration: ${net.sizes.joinToString()}")
 //    println("biases: ${net.reportBiases()}")
 //    println("weights: ${net.reportWeights()}")
@@ -19,38 +25,30 @@ fun main() {
     val trainingData = dataReader.trainingData().map { it.toVecotrized() }
     val testData = dataReader.testData()
 
-    net.SGD(trainingDataSource = trainingData, epochs = 30, miniBatchSize = 10, eta = 3.0, testData)
+    net.SGD(trainingDataSource = trainingData, epochs = 30, miniBatchSize = 10, eta = 0.005, testData)
 }
 
-class Network(val name: String, vararg val sizes: Int) {
+class Network(val name: String, val activationFunction: ActivationFunction, vararg val sizes: Int) {
 
     val numLayers: Int = sizes.size
+    val randomInit = { rng.nextDouble(m = 0.0, s = 1.0 / sqrt(sizes[0].toDouble())) }
+
+    //    val randomInit = { rng.nextDouble() }
     var biases: List<DoubleArray> = sizes
         .drop(1)
-        .map { size -> DoubleArray(size) { rng.nextDouble() } }
+        .map { size -> DoubleArray(size) { randomInit() } }
     var weights: List<DoubleMatrix> = sizes
         .dropLast(1)
         .zip(sizes.drop(1)) // so for (2,3,5) we get (2,3), (3,5)
-        .map { (layer1Size, layer2Size) -> DoubleMatrix(layer2Size, layer1Size) { _, _ -> rng.nextDouble() } }
+        .map { (layer1Size, layer2Size) -> DoubleMatrix(layer2Size, layer1Size) { _, _ -> randomInit() } }
 
     fun feedforward(input: DoubleArray): DoubleArray {
-        var a = DoubleArray(10) { 0.0 }
-        val sigm = ActivationFunction.Sigmoid::invoke
+        var a = input
+        val actFunc = activationFunction::invoke
 
         biases.zip(weights)
-            .forEach { (b, w) -> a = sigm(w * a + b) }
+            .forEach { (b, w) -> a = actFunc(w * a + b) }
         return a
-    }
-
-    /**
-     * get index of the neuron with the highest activation
-     */
-    fun feedforwardInterpret(input: DoubleArray): Int {
-        return feedforward(input)
-            .mapIndexed { i, res -> i to res }
-            .maxByOrNull { it.second }
-            ?.first
-            ?: error("")
     }
 
     fun SGD(
@@ -63,24 +61,24 @@ class Network(val name: String, vararg val sizes: Int) {
         val nTest = testData?.size ?: 0
         val n = trainingDataSource.size
 
-        println("${LocalDateTime.now()} starting training")
+        println("network $name: ${LocalDateTime.now()} starting training")
 
         for (j in 0 until epochs) {
             // shuffle training data
             val trainingData = trainingDataSource.shuffled()
             val miniBatches = trainingData.chunked(miniBatchSize)
             for (miniBatch in miniBatches) {
-                updateMiniBatch(miniBatch, eta)
+                updateMiniBatch(miniBatch, eta, j)
             }
             if (nTest > 0) {
-                println("$name ${LocalDateTime.now()} Epoch $j: ${evaluate(testData!!)} / $nTest")
+                println("$name ${LocalDateTime.now()} Epoch $j: ${evaluate(testData!!).toDouble() / 100}% accuracy")
             } else {
                 println("$name ${LocalDateTime.now()} Epoch $j complete")
             }
         }
     }
 
-    fun updateMiniBatch(miniBatch: List<LabeledImageVect>, eta: Double) {
+    fun updateMiniBatch(miniBatch: List<LabeledImageVect>, eta: Double, epoch: Int) {
         var nablaB: List<DoubleArray> = biases.map { array -> array.copy { 0.0 } }
         var nablaW: List<DoubleMatrix> = weights.map { weightMatrix -> weightMatrix.copy { _, _ -> 0.0 } }
 
@@ -94,17 +92,25 @@ class Network(val name: String, vararg val sizes: Int) {
             nablaW = nablaW.zip(deltaNablaW)
                 .map { (nw, dnw) -> nw + dnw }
         }
-
+        if (false) {
+            println("Epoch: ${epoch + 1}")
+            println("nabla b average: " + nablaB.map { it.average() }.average())
+            println("nabla b max    : " + nablaB.map { it.average() }.average())
+            println("nabla w average: " + nablaW.map { it.avgWithout0() }.average())
+            println("nabla w max    : " + (nablaW.map { it.max() }.maxOrNull() ?: 0.0))
+        }
         biases = biases.zip(nablaB)
-            .map { (b, nb) -> b - (eta / miniBatch.size) * nb }
+//            .map { (b, nb) -> b - (eta / miniBatch.size) * nb }
+            .map { (b, nb) -> b - (eta * nb) }
         weights = weights.zip(nablaW)
-            .map { (w, nw) -> w - ((eta / miniBatch.size) * nw) }
+//            .map { (w, nw) -> w - ((eta / miniBatch.size) * nw) }
+            .map { (w, nw) -> w - (eta * nw) }
     }
 
     fun backprop(image: DoubleArray, label: DoubleArray): Pair<List<DoubleArray>, List<DoubleMatrix>> {
 
-        val activationFunc = ActivationFunction.Sigmoid::invoke
-        val activationDerivative = ActivationFunction.Sigmoid::derivative
+        val activationFunc = activationFunction::invoke
+        val activationDerivative = activationFunction::derivative
 
         val nablaB = biases.map { it.copy { 0.0 } }.toMutableList()
         val nablaW = weights.map { it.copy { _, _ -> 0.0 } }.toMutableList()
@@ -147,19 +153,25 @@ class Network(val name: String, vararg val sizes: Int) {
 //            delta = np.dot(self.weights[-l+1].transpose(), delta) * sp
             delta = (weights[weights.size - l + 1].transpose() * delta).hadamard(sp)
             nablaB[nablaB.size - l] = delta
-            nablaW[nablaW.size - l] = delta * activations[activations.size - l - 1].transpose()
+            val currentNablaW = delta * activations[activations.size - l - 1].transpose()
+            nablaW[nablaW.size - l] = currentNablaW
         }
 
         return nablaB to nablaW
     }
 
     fun costDerivative(outputActivations: DoubleArray, y: DoubleArray): DoubleArray {
+//        return y - outputActivations
+        // TODO switch back to
         return outputActivations - y
     }
 
     fun evaluate(testData: List<LabeledImage>): Int {
+
         val hitCount = testData
-            .map { (image, label) -> feedforwardInterpret(image.pixels.map { it.toDouble() }.toDoubleArray()) to label }
+            .map { (image, label) -> image.pixels.map { it.toDouble() }.toDoubleArray() to label }
+            .map { (imageData, label) -> feedforward(imageData) to label }
+            .map { (guess, label) -> guess.getHighestActivationIndex() to label }
             .count { (guess, label) -> guess == label }
         return hitCount
     }

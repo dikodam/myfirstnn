@@ -1,5 +1,7 @@
 package de.dikodam.utils
 
+import kotlin.math.abs
+
 fun main() {
 //    val ma = DoubleMatrix(2, 3) { rowCounter, colCounter -> (10 * (rowCounter + 1) + colCounter + 1).toDouble() }
 //    println(ma)
@@ -91,6 +93,21 @@ class DoubleMatrix(val rowCount: Int, val columnCount: Int, initialize: (Int, In
                 postfix = "]"
             )
         }
+    }
+
+
+    fun avgWithout0(): Double {
+        return values.asSequence()
+            .flatMap { it.asSequence() }
+            .filter { it != 0.0 && it != -0.0 }
+            .average()
+    }
+
+    fun max(): Double {
+        return values.asSequence()
+            .flatMap { it.asSequence() }
+            .map { abs(it) }
+            .maxOrNull() ?: 0.0
     }
 
     fun transpose(): DoubleMatrix {
